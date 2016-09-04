@@ -459,7 +459,10 @@ public class SatisfactionController extends BaseController
 		}
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
 		image.setCreateTime(sdf.parse(sdf.format(new Date())));
-		surveyService.save(image);
+		if(StringUtil.isNotEmpty(image.getId()))
+			surveyService.saveOrUpdate(image);
+		else
+			surveyService.save(image);
 		return j;
 	}
 	

@@ -87,17 +87,17 @@
 				<c:if test="${empty image.tagId }">
                 	<select name="tagId1">
                 		<c:forEach var="survey"  items="${surveyList }">
-                			<option value="${survey.surveyId }">${survey.title }</option>
+                			<option value="${survey.id }">${survey.title }</option>
                 		</c:forEach>
                 	</select>
                 </c:if>
                 <c:if test="${!empty image.tagId }">
                 	<select name="tagId1">
 	                	<c:forEach items="${surveyList }" var="survey">
-	                		<c:if test="${survey.surveyId == image.tagId }"><option value="${survey.surveyId }">${survey.title }</option></c:if>
+	                		<c:if test="${survey.id == image.tagId }"><option value="${survey.id }">${survey.title }</option></c:if>
 	                	 </c:forEach>
 	                	 <c:forEach var="survey" items="${surveyList }">
-	                		<c:if test="${survey.surveyId != image.tagId }"><option value="${survey.surveyId }">${survey.title }</option></c:if>
+	                		<c:if test="${survey.id != image.tagId }"><option value="${survey.id }">${survey.title }</option></c:if>
 	                	 </c:forEach>
                 	 </select>
                 </c:if>

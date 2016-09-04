@@ -13,7 +13,7 @@
 	<t:dgCol title="发布状态" field="state" replace="不发布_0,正在发布_1"></t:dgCol>
 	<t:dgCol title="发布时间" field="createTime" formatter="yyyy-MM-dd hh:mm:ss"></t:dgCol>
 	<t:dgCol title="操作" field="opt" width="100"></t:dgCol>
-	<t:dgDelOpt title="删除" url="satisfactionController.do?delReport&id={id}" />
+	<t:dgDelOpt title="删除" url="satisfactionController.do?delSurvey&id={id}" />
 	<t:dgToolBar title="录入" icon="icon-add" url="satisfactionController.do?aouSurvey" width="920" height="640" funname="add"></t:dgToolBar>
 	<t:dgToolBar title="编辑" icon="icon-edit" url="satisfactionController.do?aouSurvey" width="920" height="640" funname="update"></t:dgToolBar>
 </t:datagrid> 
