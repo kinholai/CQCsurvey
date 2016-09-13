@@ -11,9 +11,13 @@
   </t:datagrid>
   <div id="createtb" style="padding: 5px; height: 25px">
 	<div style="float: left;">
-		<a href="#" class="easyui-linkbutton" plain="true" icon="icon-add" onclick="update2('特定题目平均总分分析','statisticController.do?execute1_1','execute', 1080, 520)">特定题目平均总分分析</a>
+	<a href="#" class="easyui-linkbutton" plain="true" icon="icon-add" onclick="update2('特定题目平均总分分析','statisticController.do?execute1_1','execute', 1080, 520)">特定题目平均总分分析(旧)</a>
+		<a href="#" class="easyui-linkbutton" plain="true" icon="icon-add" onclick="update2('特定题目平均总分分析','statisticController.do?execute2_1','execute', 1080, 520)">特定题目平均总分分析</a>
 	</div>
 </div>
+
+
+
 <script type="text/javascript">
 function update2(title,url, id,width,height) {
 	gridname=id;

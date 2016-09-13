@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,9 +24,11 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.jeecgframework.core.common.controller.BaseController;
 import org.jeecgframework.core.common.hibernate.qbc.CriteriaQuery;
+import org.jeecgframework.core.common.model.common.UploadFile;
 import org.jeecgframework.core.common.model.json.AjaxJson;
 import org.jeecgframework.core.common.model.json.DataGrid;
 import org.jeecgframework.core.util.BrowserUtils;
+import org.jeecgframework.core.util.ContextHolderUtils;
 import org.jeecgframework.core.util.StringUtil;
 import org.jeecgframework.tag.core.easyui.TagUtil;
 import org.jeecgframework.web.system.service.SystemService;
@@ -40,8 +43,10 @@ import cqc.survey.model.Attribute;
 import cqc.survey.model.Bar;
 import cqc.survey.model.PointAnalysis;
 import cqc.survey.model.SurveyAnalysisHead;
+import cqc.survey.model.SurveyAnalysisPython;
 import cqc.survey.model.SurveyAnalysisQuestion;
 import cqc.survey.model.SurveyAnalysisQuestionPage;
+import cqc.survey.model.SurveyAnalysisResult;
 import cqc.survey.model.SurveyChoice;
 import cqc.survey.model.SurveyExcel;
 import cqc.survey.model.SurveyHead;
@@ -521,7 +526,7 @@ public class StatisticController extends BaseController
 	{
 		AjaxJson j = new AjaxJson();
 		String headId = request.getParameter("headId");
-		String remark = request.getParameter("remark");
+//		String remark = request.getParameter("remark");
 		
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		SurveyHead s = surveyService.getEntity(SurveyHead.class, headId);
@@ -531,7 +536,7 @@ public class StatisticController extends BaseController
 			sah.setHead(s.getHead());
 			sah.setSettingState((short) 0);
 			sah.setCreatedDate(sdf.parse(sdf.format(new Date())));
-			sah.setRemark(remark);
+//			sah.setRemark(remark);
 		systemService.save(sah);
 			
 		List<SurveyQuestion> qList = systemService.findHql("from SurveyQuestion where headId=? order by orderNo asc", headId);
@@ -589,6 +594,246 @@ public class StatisticController extends BaseController
 		surveyService.saveOrUpdate(sah);
 		
 		j.setMsg("分析配置成功。");
+		return j;
+	}
+	
+	@RequestMapping(params = "getPython")
+	public ModelAndView getPython(HttpServletRequest request)
+	{
+		String analysisHeadId = request.getParameter("analysisHeadId");
+		request.setAttribute("analysisHeadId", analysisHeadId);
+		return new ModelAndView("cqc/analysis/getPython");
+	}
+	
+	@RequestMapping(params = "pythonList")
+	public void pythonList(SurveyAnalysisPython sap, HttpServletRequest request,
+			HttpServletResponse response, DataGrid dataGrid)
+	{
+		String analysisHeadId = request.getParameter("analysisHeadId");
+		CriteriaQuery cq = new CriteriaQuery(SurveyAnalysisPython.class, dataGrid);
+			cq.eq("analysisHeadId", analysisHeadId);
+			cq.add();
+		systemService.getDataGridReturn(cq, true);
+		TagUtil.datagrid(response, dataGrid);
+	}
+	
+	@RequestMapping(params = "addPython")
+	public ModelAndView addPython(HttpServletRequest request)
+	{
+		String analysisHeadId = request.getParameter("analysisHeadId");
+		request.setAttribute("analysisHeadId", analysisHeadId);
+		return new ModelAndView("cqc/analysis/addPython");
+	}
+	
+	@RequestMapping(params = "setObject")
+	@ResponseBody
+	public AjaxJson setObject(SurveyAnalysisPython sap, HttpServletRequest request)
+	{
+		AjaxJson j = new AjaxJson();
+		
+		if(StringUtil.isEmpty(sap.getAnalysisHeadId()) ||
+				StringUtil.isEmpty(sap.getRemark()))
+		{
+			j.setSuccess(false);
+		}
+		else
+			j.setSuccess(true);
+		j.setObj(sap);
+		return j;
+	}
+	
+	@RequestMapping(params = "savePython")
+	@ResponseBody
+	public AjaxJson savePython(SurveyAnalysisPython sap, HttpServletRequest request) throws ParseException
+	{
+		AjaxJson j = new AjaxJson();
+		
+		Map<String, Object> attributes = new HashMap<String, Object>();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		sap.setCreateTime(sdf.parse(sdf.format(new Date())));
+		
+		UploadFile uploadFile = new UploadFile(request, sap);
+			uploadFile.setCusPath("pythons");
+			uploadFile.setSwfpath("swfpath");
+			uploadFile.setByteField(null);
+		sap = systemService.uploadFile(uploadFile);
+		systemService.save(sap);
+		
+		attributes.put("fileKey", sap.getId());
+		attributes.put("viewhref", "commonController.do?objfileList&fileKey=" + sap.getId());
+		attributes.put("delurl", "commonController.do?delObjFile&fileKey=" + sap.getId());
+		
+		j.setMsg("脚本文件上传成功");
+		j.setAttributes(attributes);
+		return j;
+	}
+	
+	@RequestMapping(params = "delPython")
+	@ResponseBody
+	public AjaxJson delPython(HttpServletRequest request)
+	{
+		AjaxJson j = new AjaxJson();
+		String id = request.getParameter("id");
+		
+		SurveyAnalysisPython sap = systemService.getEntity(SurveyAnalysisPython.class, id);
+		surveyService.deletePython(sap);
+		
+		j.setMsg("删除脚本文件成功。");
+		
+		return j;
+	}
+	
+	@RequestMapping(params = "executeDefault1_1")
+	public ModelAndView executeDefault1_1(HttpServletRequest request)
+	{
+		String analysisHeadId = request.getParameter("id");
+		String headId = request.getParameter("headId");
+		request.setAttribute("analysisHeadId", analysisHeadId);
+		request.setAttribute("headId", headId);
+		return new ModelAndView("cqc/analysis/executeDefault");
+	}
+	
+	@RequestMapping(params = "executeDefault1_2")
+	@ResponseBody
+	public AjaxJson executeDefault1_2(HttpServletRequest request) throws ParseException
+	{
+		AjaxJson j = new AjaxJson();
+		String analysisHeadId = request.getParameter("analysisHeadId");
+		String headId = request.getParameter("headId");
+		
+		String date_begin = request.getParameter("date_begin");
+		String date_end = request.getParameter("date_end");
+		
+		if(systemService.findHql("from SurveyAnalysisResult where analysisHeadId=?", analysisHeadId).size() > 0)
+			systemService.executeSql("delete from survey_analysis_result where analysis_head_id=?", analysisHeadId);
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		
+		List<PointAnalysis> paList = systemService.findHql("SELECT new cqc.survey.model.PointAnalysis(aq.orderNo, aq.weight, c.choiceOrder, aq.markState, aq.mark, i.id) " +
+				"FROM SurveyAnswer a, SurveyChoice c, SurveyAnalysisQuestion aq, SurveyInterviewee i " +
+				"WHERE a.choiceId=c.id AND c.questionId=aq.questionId AND a.intervieweeId=i.id " +
+				"AND aq.analysisId=? AND (i.submitTime between ? and ?) ORDER BY a.intervieweeId, aq.orderNo", analysisHeadId, sdf.parse(date_begin), sdf.parse(date_end));
+		
+		List<SurveyAnalysisQuestion> saqList = surveyService.findHql("from SurveyAnalysisQuestion where analysisId=? order by orderNo asc", analysisHeadId);
+		final int questionSum = saqList.size();
+		
+		SurveyHead sh = surveyService.getEntity(SurveyHead.class, headId);
+		int personalNum = sh.getPersonalNum();
+		
+		int questionOrder = 0;
+		boolean abandon = false;
+		BigDecimal point = new BigDecimal(0);
+		List<SurveyAnalysisResult> sar = new ArrayList<SurveyAnalysisResult>();
+		for(int i = 0; i < paList.size(); i++)
+		{
+			PointAnalysis pa = paList.get(i);
+			
+			questionOrder++;
+			if(questionOrder == questionSum + 1)
+			{
+				if(abandon == false)//不用丢弃该提交者的数据
+				{
+					//保存 该提交者的总分
+					for(SurveyAnalysisResult r : sar)
+					{
+						r.setResult(point.doubleValue());
+//						systemService.save(r);
+						systemService.executeSql("insert into survey_analysis_result(id, interviewee_id, analysis_head_id, order_no, choice_order, result)"
+								+ "values (?, ?, ?, ?, ?, ?)", UUID.randomUUID().toString().replaceAll("\\-", ""), r.getIntervieweeId(), r.getAnalysisHeadId(), r.getOrderNo(), r.getChoiceOrder(), r.getResult());
+					}
+				}
+				
+				abandon = false;
+				point = new BigDecimal(0);
+				questionOrder = 0;
+				sar = new ArrayList<SurveyAnalysisResult>();
+				i--;
+				continue;
+			}
+			
+			if(questionOrder != pa.getOrderNo())
+			{
+				abandon = true;
+				i--;
+			}
+			else
+			{
+				if(pa.getMarkState() == (short) 1)
+				{
+					String[] marks = pa.getMark().split("；");
+					int choiceNo = pa.getChoiceOrder()-1;
+					double mark = Double.parseDouble(marks[choiceNo]);
+					double weight = pa.getWeight();
+					BigDecimal toBeAdded = new BigDecimal(mark).multiply(new BigDecimal(weight));
+					point = point.add(toBeAdded);
+				}
+				if(pa.getOrderNo() <= personalNum)
+				{
+					SurveyAnalysisResult r = new SurveyAnalysisResult();
+						r.setAnalysisHeadId(analysisHeadId);
+						r.setChoiceOrder(pa.getChoiceOrder());
+						r.setIntervieweeId(pa.getIntervieweeId());
+						r.setOrderNo(pa.getOrderNo());
+					sar.add(r);
+				}
+			}
+		}
+		
+//		SurveyAnalysisHead sah = surveyService.getEntity(SurveyAnalysisHead.class, analysisHeadId);
+//			sah.setRemark("最近一次执行的计算：默认计算");
+//		surveyService.saveOrUpdate(sah);
+		systemService.executeSql("update survey_analysis_head set remark=? where id=?", "最近一次执行的计算：默认计算", analysisHeadId);	
+		
+		j.setMsg("执行完毕。");
+		return j;
+	}
+	
+	@RequestMapping(params = "executePython1_1")
+	public ModelAndView executePython1_1(HttpServletRequest request)
+	{
+		String analysisHeadId = request.getParameter("id");
+		List<SurveyAnalysisPython> pythons = systemService.findByProperty(SurveyAnalysisPython.class, "analysisHeadId", analysisHeadId);
+		if(pythons.size() < 1)
+		{
+			return new ModelAndView("cqc/errorPage").addObject("message", "当前分析没有脚本文件，请先上传。");
+		}
+		request.setAttribute("pythons", pythons);
+		request.setAttribute("analysisHeadId", analysisHeadId);
+		return new ModelAndView("cqc/analysis/executePython");
+	}
+	
+	@RequestMapping(params = "executePython1_2")
+	@ResponseBody
+	public AjaxJson executePython1_2(HttpServletRequest request)
+	{
+		AjaxJson j = new AjaxJson();
+		String analysisHeadId = request.getParameter("analysisHeadId");
+		String pythonId = request.getParameter("pythonId");
+		SurveyAnalysisPython sap = systemService.getEntity(SurveyAnalysisPython.class, pythonId);
+		String realPath = ContextHolderUtils.getSession().getServletContext().getRealPath("/");
+		String realpath = sap.getRealpath();
+		if(systemService.findHql("from SurveyAnalysisResult where analysisHeadId=?", analysisHeadId).size() > 0)
+			systemService.executeSql("delete from survey_analysis_result where analysis_head_id=?", analysisHeadId);
+		try
+		{
+			Process proc = Runtime.getRuntime().exec("python  " + realPath + realpath);
+			proc.waitFor();
+		} 
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}  
+		catch (InterruptedException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		systemService.executeSql("update survey_analysis_head set remark=? where id=?", "最近一次执行的计算：" + sap.getAttachmenttitle() + "." + sap.getExtend(), analysisHeadId);	
+		
+		j.setMsg("执行完毕。");
 		return j;
 	}
 	
@@ -659,7 +904,7 @@ public class StatisticController extends BaseController
 		List<PointAnalysis> paList = systemService.findHql("SELECT new cqc.survey.model.PointAnalysis(aq.orderNo, aq.weight, c.choiceOrder, aq.markState, aq.mark) " +
 				"FROM SurveyAnswer a, SurveyChoice c, SurveyAnalysisQuestion aq, SurveyInterviewee i " +
 				"WHERE a.choiceId=c.id AND c.questionId=aq.questionId AND a.intervieweeId=i.id " +
-				"AND aq.analysisId=? AND (i.submitTime between ? and ?) ORDER BY a.intervieweeId", AID, sdf.parse(date_begin), sdf.parse(date_end));
+				"AND aq.analysisId=? AND (i.submitTime between ? and ?) ORDER BY a.intervieweeId, aq.orderNo", AID, sdf.parse(date_begin), sdf.parse(date_end));
 		
 		final int questionSum = saqList.size();
 		
@@ -795,7 +1040,7 @@ public class StatisticController extends BaseController
 		List<PointAnalysis> paList = systemService.findHql("SELECT new cqc.survey.model.PointAnalysis(aq.orderNo, aq.weight, c.choiceOrder, aq.markState, aq.mark) " +
 				"FROM SurveyAnswer a, SurveyChoice c, SurveyAnalysisQuestion aq, SurveyInterviewee i " +
 				"WHERE a.choiceId=c.id AND c.questionId=aq.questionId AND a.intervieweeId=i.id " +
-				"AND aq.analysisId=? AND (i.submitTime between ? and ?) ORDER BY a.intervieweeId", AID, sdf.parse(date_begin), sdf.parse(date_end));
+				"AND aq.analysisId=? AND (i.submitTime between ? and ?) ORDER BY a.intervieweeId, aq.orderNo", AID, sdf.parse(date_begin), sdf.parse(date_end));
 		
 		final int questionSum = saqList.size();
 		
@@ -804,7 +1049,7 @@ public class StatisticController extends BaseController
 		final int cnum = scList.size();
 		List<BigDecimal> times = new ArrayList<BigDecimal>();
 		List<BigDecimal> points = new ArrayList<BigDecimal>();
-		for(int i = 0; i <= cnum; i++) // i <= cnum, 故index直接对应choiceOrder,而当是主观题时index=0时对应了主观题
+		for(int i = 0; i <= cnum; i++) // i <= cnum, 故i直接对应choiceOrder,而当是主观题时 i=0时对应了主观题
 		{
 			BigDecimal innit = new BigDecimal(0);
 			times.add(innit);
@@ -812,7 +1057,7 @@ public class StatisticController extends BaseController
 		}
 		
 		int questionOrder = 0;
-		int this_choice = 0;
+		int this_choice = 0; 
 		boolean abandon = false;
 		BigDecimal point = new BigDecimal(0);
 		for(int i = 0; i < paList.size(); i++)
@@ -895,6 +1140,180 @@ public class StatisticController extends BaseController
 		return new ModelAndView("cqc/analysis/execute1_3");
 	}
 	
+	@RequestMapping(params = "execute2_1")
+	public ModelAndView execute2_1(HttpServletRequest request)
+	{
+		String AID = request.getParameter("id");
+		String SID = request.getParameter("headId");
+		
+		SurveyHead sh = systemService.getEntity(SurveyHead.class, SID);
+		List<SurveyQuestion> sList = 
+				surveyService.limit("from SurveyQuestion where headId='" + SID + "'order by orderNo asc", 0, sh.getPersonalNum());
+		
+		request.setAttribute("AID", AID);
+		request.setAttribute("SID", SID);
+		request.setAttribute("sList", sList);
+		return new ModelAndView("cqc/analysis/execute2_1");
+	}
+	
+	@RequestMapping(params = "execute2_2")
+	public ModelAndView execute2_2(HttpServletRequest request)
+	{
+		String SID = request.getParameter("SID");
+		String AID = request.getParameter("AID");
+		String QID = request.getParameter("QID");
+		
+		SurveyQuestion q = systemService.getEntity(SurveyQuestion.class, QID);
+		
+		request.setAttribute("SID", SID);
+		request.setAttribute("AID", AID);
+		request.setAttribute("QID", QID);
+		request.setAttribute("q", q);
+		return new ModelAndView("cqc/analysis/execute2_2");
+	}
+	
+	@RequestMapping(params = "getC4")
+	@ResponseBody
+	public Map<String, Object> getC4(HttpServletRequest request) throws ParseException
+	{
+//		String SID = request.getParameter("SID");
+		String AID = request.getParameter("AID");
+		String QID = request.getParameter("QID");
+		
+		SurveyQuestion sq = surveyService.getEntity(SurveyQuestion.class, QID);
+		
+		List<SurveyChoice> scList = surveyService.findByProperty(SurveyChoice.class, "questionId", QID);
+		
+		final int cnum = scList.size();
+		List<BigDecimal> times = new ArrayList<BigDecimal>();
+		List<BigDecimal> points = new ArrayList<BigDecimal>();
+		for(int i = 0; i <= cnum; i++) // i <= cnum, 故index直接对应choiceOrder,而当是主观题时index=0时对应了主观题
+		{
+			BigDecimal innit = new BigDecimal(0);
+			times.add(innit);
+			points.add(innit);
+		}
+		
+		List<SurveyAnalysisResult> sar = systemService.findHql("from SurveyAnalysisResult where analysisHeadId=? and orderNo=?", AID, sq.getOrderNo());
+		if(sar.size() > 0)
+			for(SurveyAnalysisResult r : sar)
+			{
+				BigDecimal t = times.get(r.getChoiceOrder());
+					t = t.add(new BigDecimal(1));
+				BigDecimal p = points.get(r.getChoiceOrder());
+					p = p.add(new BigDecimal(r.getResult()));
+				times.set(r.getChoiceOrder(), t);
+				points.set(r.getChoiceOrder(), p);
+			}
+	
+		//算平均分 封装数据
+		Bar b = new Bar();
+		List<String> data = new ArrayList<String>();
+		List<String> xname = new ArrayList<String>();
+		List<Bar> yvalue = new ArrayList<Bar>();
+		
+		boolean split = false;
+		if(scList.size() > 5)
+			split = true;
+		
+		int j = 0;
+		for(SurveyChoice c : scList)
+		{
+			j++;
+			String x = "";
+			if(StringUtil.isNotEmpty(c.getChoice()))
+				x = c.getChoice();
+			else
+			{
+				x = "(主观题)";
+				j = 0;
+			}
+			BigDecimal p = points.get(j);
+			BigDecimal t = times.get(j);
+			BigDecimal average;
+			if(t.compareTo(new BigDecimal(1)) == -1) //t < 1
+				average = new BigDecimal(0);
+			else
+				average = p.divide(t, 2, BigDecimal.ROUND_HALF_UP);
+			data.add(average.toString());
+			if(split)
+				x = x.substring(0, x.length()/2) + "\n" + x.substring(x.length()/2, x.length());
+			xname.add(x);
+		}
+		b.setName("特定题目回答者平均总分");
+		b.setData(data);
+		b.setType("bar");
+		yvalue.add(b);
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+			map.put("xname", xname);
+			map.put("yvalue", yvalue);
+			
+		return map;
+		
+	}
+	
+	@RequestMapping(params = "execute2_3")
+	public ModelAndView execute2_3(HttpServletRequest request) throws ParseException
+	{
+		String SID = request.getParameter("SID");
+		String AID = request.getParameter("AID");
+		String QID = request.getParameter("QID");
+		
+		SurveyQuestion sq = surveyService.getEntity(SurveyQuestion.class, QID);
+		
+		List<SurveyChoice> scList = surveyService.findByProperty(SurveyChoice.class, "questionId", QID);
+		
+		final int cnum = scList.size();
+		List<BigDecimal> times = new ArrayList<BigDecimal>();
+		List<BigDecimal> points = new ArrayList<BigDecimal>();
+		for(int i = 0; i <= cnum; i++) // i <= cnum, 故index直接对应choiceOrder,而当是主观题时index=0时对应了主观题
+		{
+			BigDecimal innit = new BigDecimal(0);
+			times.add(innit);
+			points.add(innit);
+		}
+		
+		List<SurveyAnalysisResult> sar = systemService.findHql("from SurveyAnalysisResult where analysisHeadId=? and orderNo=?", AID, sq.getOrderNo());
+		if(sar.size() > 0)
+			for(SurveyAnalysisResult r : sar)
+			{
+				BigDecimal t = times.get(r.getChoiceOrder());
+					t = t.add(new BigDecimal(1));
+				BigDecimal p = points.get(r.getChoiceOrder());
+					p = p.add(new BigDecimal(r.getResult()));
+				times.set(r.getChoiceOrder(), t);
+				points.set(r.getChoiceOrder(), p);
+			}
+		
+		List<Attribute> aList = new ArrayList<Attribute>();
+		
+		int j = 0;
+		for(SurveyChoice c : scList)
+		{
+			j++;
+			Attribute a = new Attribute();
+			if(StringUtil.isNotEmpty(c.getChoice()))
+				a.setKey(c.getChoice());
+			else
+				a.setKey("(主观题)");
+			BigDecimal p = points.get(j);
+			BigDecimal t = times.get(j);
+			BigDecimal average;
+			if(t.compareTo(new BigDecimal(1)) == -1) //t < 1
+				average = new BigDecimal(0);
+			else
+				average = p.divide(t, 2, BigDecimal.ROUND_HALF_UP);
+			a.setValue(average.toString());
+			aList.add(a);
+		}
+		
+		request.setAttribute("aList", aList);
+		request.setAttribute("SID", SID);
+		request.setAttribute("AID", AID);
+		request.setAttribute("q", sq);
+		return new ModelAndView("cqc/analysis/execute2_3");
+	}
 	
 	/**
 	 * 删除 分析

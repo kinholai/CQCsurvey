@@ -39,6 +39,9 @@ public class SurveyHead implements Serializable
 	private short limitState;
 	
 	private int limitNum;
+	
+	private int personalNum;
+	
 	/**
 	 *方法: 取得java.lang.String
 	 *@return: java.lang.String  id
@@ -161,4 +164,16 @@ public class SurveyHead implements Serializable
 		this.limitNum = limitNum;
 	}
 
+	@Column(name ="PERSONAL_NUM",nullable=false)
+	public int getPersonalNum()
+	{
+		return personalNum;
+	}
+
+	public void setPersonalNum(int personalNum)
+	{
+		this.personalNum = personalNum;
+	}
+
+	
 }

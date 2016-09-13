@@ -26,8 +26,13 @@
  	with (thisform)
    {
  		var head = document.getElementsByName("limitNum");
+ 		var head1 = document.getElementsByName("personalNum");
  			 	if (validate_required1(head[0], "限制次数不能小于1!")==false)
  		     	{	head[0].focus();
+ 		     		return false;
+ 		     	}
+ 			 	if (validate_required1(head1[0], "个人信息题目数量不能小于1!")==false)
+ 		     	{	head1[0].focus();
  		     		return false;
  		     	}
    }
@@ -59,6 +64,11 @@
         <div class="form">
             <label class="Validform_label"> 受限对象的限值次数x: </label>
             	<input name="limitNum" value="1">
+            <span class="Validform_checktip"></span>
+        </div>
+        <div class="form">
+            <label class="Validform_label"> 个人信息题目数量: </label>
+            	<input name="personalNum" value="1">
             <span class="Validform_checktip"></span>
         </div>
     </fieldset>

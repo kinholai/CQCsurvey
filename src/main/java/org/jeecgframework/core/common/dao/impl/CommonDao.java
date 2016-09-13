@@ -591,4 +591,12 @@ public class CommonDao extends GenericBaseCommonDao implements ICommonDao, IGene
 		}
 		return treegrid;
 	}
+	
+	public <T> List<T> limit(String hql, int first, int max)
+	{
+		Query q = getSession().createQuery(hql);
+			q.setFirstResult(first);
+			q.setMaxResults(max);
+		return q.list();
+	}
 }

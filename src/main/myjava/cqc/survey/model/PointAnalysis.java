@@ -12,6 +12,8 @@ public class PointAnalysis
 	
 	private String mark;
 
+	private String intervieweeId;
+	
 	public PointAnalysis(int orderNo, double weight, int choiceOrder,
 			short markState, String mark)
 	{
@@ -21,6 +23,18 @@ public class PointAnalysis
 		this.choiceOrder = choiceOrder;
 		this.markState = markState;
 		this.mark = mark;
+	}
+	
+	public PointAnalysis(int orderNo, double weight, int choiceOrder,
+			short markState, String mark, String intervieweeId)
+	{
+		super();
+		this.orderNo = orderNo;
+		this.weight = weight;
+		this.choiceOrder = choiceOrder;
+		this.markState = markState;
+		this.mark = mark;
+		this.intervieweeId = intervieweeId;
 	}
 
 	public int getOrderNo()
@@ -71,6 +85,16 @@ public class PointAnalysis
 	public void setMark(String mark)
 	{
 		this.mark = mark;
+	}
+
+	public String getIntervieweeId()
+	{
+		return intervieweeId;
+	}
+
+	public void setIntervieweeId(String intervieweeId)
+	{
+		this.intervieweeId = intervieweeId;
 	}
 	
 	

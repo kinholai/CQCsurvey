@@ -23,6 +23,8 @@
 </div>	
 </div>
 </div>
+
+
 <div data-options="region:'east',
 	title:'黑白名单管理',
 	collapsed:true,

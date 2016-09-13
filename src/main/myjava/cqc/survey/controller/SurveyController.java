@@ -134,6 +134,9 @@ public class SurveyController extends BaseController
 		AjaxJson j = new AjaxJson();
 		String headId = request.getParameter("headId");
 		String limitState = request.getParameter("limitState");
+		String limitNum = request.getParameter("limitNum");
+		String personalNum = request.getParameter("personalNum");
+		
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		
 		SurveyHead sh = new SurveyHead();
@@ -146,6 +149,8 @@ public class SurveyController extends BaseController
 			sh.setCreatedTime(sdf.parse(sdf.format(new Date())));
 			sh.setPublishState(Constant.UNUSING_STATE);//未发布
 			sh.setLimitState(Short.parseShort(limitState));
+			sh.setLimitNum(Integer.parseInt(limitNum));
+			sh.setPersonalNum(Integer.parseInt(personalNum));
 		surveyService.save(sh);
 		
 		List<QuestionaireBlock> qbList = systemService.findHql("from QuestionaireBlock where mainId=? order by blockOrder asc", headId);
@@ -411,6 +416,22 @@ public class SurveyController extends BaseController
 	}
 	
 	/**
+	 * 删除黑名单
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping(params = "delBIP")
+	@ResponseBody
+	public AjaxJson delBIP(HttpServletRequest request)
+	{
+		AjaxJson j = new AjaxJson();
+		String id = request.getParameter("id");
+		systemService.executeSql("delete from survey_reject where id=?", id);
+		j.setMsg("删除黑名单IP成功。");
+		return j;
+	}
+	
+	/**
 	 * 白名单管理 页面跳转
 	 * @param request
 	 * @return
@@ -480,6 +501,17 @@ public class SurveyController extends BaseController
 			systemService.saveOrUpdate(sa);
 		else
 			systemService.save(sa);
+		return j;
+	}
+	
+	@RequestMapping(params = "delWIP")
+	@ResponseBody
+	public AjaxJson delWIP(HttpServletRequest request)
+	{
+		AjaxJson j = new AjaxJson();
+		String id = request.getParameter("id");
+		systemService.executeSql("delete from survey_admit where id=?", id);
+		j.setMsg("删除白名单IP成功。");
 		return j;
 	}
 	

@@ -11,19 +11,19 @@
 
  </script>
 <body>
-<t:formvalid formid="formobj" layout="div" dialog="true" action="statisticController.do?saveAnalysis">
+<t:formvalid formid="formobj" layout="div" dialog="true" action="statisticController.do?executePython1_2">
     <fieldset class="step">
+    <input type="hidden" name="analysisHeadId" value="${analysisHeadId }">
         <div class="form">
-            <label class="Validform_label"> 选择调查: </label>
-            	<select name="headId" style="width:400px;">
-            		<c:forEach  items="${sList }" var="s">
-            			<option value="${s.id }">${s.head }</option>
+            <label class="Validform_label"> 选择脚本文件: </label>
+            	<select name="pythonId" style="width:400px;">
+            		<c:forEach  items="${pythons }" var="s">
+            			<option value="${s.id }">${s.attachmenttitle }</option>
             		</c:forEach>
             	</select>
             <span class="Validform_checktip"></span>
         </div>
     </fieldset>
-    提示：点击确定后可能需等待稍长时间才有响应。
 </t:formvalid>
 </body>
 </html>
